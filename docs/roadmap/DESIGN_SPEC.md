@@ -216,7 +216,7 @@ VibeWriter/
 **완료 기준:**
 - [ ] 주제 입력 → 2000자 이상 블로그 글 생성 성공
 - [ ] 생성 글이 해당 카테고리 스타일 가이드 항목 80% 이상 준수
-- [ ] `data/output/YYYYMMDD_주제.md` 파일 저장 확인
+- [ ] `data/output/{YYYYMMDD}_{slug}_draft.md` 파일 저장 확인
 
 ---
 

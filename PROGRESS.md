@@ -56,19 +56,38 @@
 
 **출력**: `data/output/{YYYYMMDD}_{slug}_outline.json`
 
+### Phase 2 Step 2: 본문 생성 ✅
+
+**구현된 모듈**:
+- `agents/writer.py` (신규) — 아웃라인 로드, 스타일 가이드 기반 섹션별 LLM 본문 생성, draft.md 저장
+  - `_load_outline`: JSON 파싱 + 필수 필드 검증, fallback
+  - `_load_style_guide`: OSError fallback (빈 문자열로 계속 진행)
+  - `_build_style_context`: 문체·어휘·구조 섹션 추출 (planner와 달리 어휘 포함)
+  - `_generate_section`: prev_context(최대 200자), opening/closing type_hint 삽입, description fallback
+  - `_assemble_draft`: title_candidates[0] 제목, 메타 주석, ## 섹션 조합
+  - `_save_draft`: OSError 처리
+- `main.py` — `cmd_write()`에 `write(outline_path)` 연결
+
+**출력**: `data/output/{YYYYMMDD}_{slug}_draft.md`
+
+**검증 완료**:
+- 제주 여행 3박4일 후기 → 2876자, 6개 섹션 draft.md 생성 성공
+- outline.json + draft.md 파이프라인 단일 명령어로 동작 확인
+
 ---
 
 ## 다음 작업
 
-### Phase 2 Step 2: 본문 생성
+### Phase 2 Step 3: 품질 검증 및 humanize
 
-**목표**: 아웃라인 JSON을 읽어 스타일 가이드 기반으로 섹션별 본문을 생성하고 `draft.md`로 저장
+**목표**: draft.md 본문의 AI 티 제거, 스타일 가이드 준수 여부 체크, 최종 Markdown 저장
 
 **구현할 모듈**:
-- `agents/writer.py` (신규) — 아웃라인 로드, 섹션별 LLM 본문 생성, 스타일 가이드 반영
-- `main.py` — `write` 파이프라인에 WriterAgent 연결
+- `agents/quality.py` (신규) — 반복 어휘 제거, 접속사 다양화, 문장 길이 리듬 조정
+- `utils/humanize.py` (신규) — humanize 정책 핵심 로직
+- `main.py` — `write` 파이프라인에 QualityAgent 연결
 
-**상세 설계**: `docs/dev/phase2-step2.md` (미작성 — 개발 전 작성 필요)
+**상세 설계**: `docs/dev/phase2-step3.md` (개발 전 작성 필요)
 
 ---
 
@@ -81,7 +100,8 @@ VibeWriter/
 │   ├── parser.py        # 본문 추출 (BeautifulSoup4)
 │   ├── analysis.py      # 카테고리 분류 + 톤앤매너 분석 (LLM)
 │   ├── style_guide.py   # 스타일 가이드 생성 (카테고리별 집계)
-│   └── planner.py       # 주제 분석 + 아웃라인 생성 (LLM)
+│   ├── planner.py       # 주제 분석 + 아웃라인 생성 (LLM)
+│   └── writer.py        # 섹션별 본문 생성 · draft.md 저장 (LLM)
 ├── data/
 │   ├── input/
 │   │   └── blog_urls.txt

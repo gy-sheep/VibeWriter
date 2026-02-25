@@ -6,6 +6,7 @@ from agents.crawler import crawl
 from agents.parser import parse
 from agents.planner import plan
 from agents.style_guide import generate_style_guides
+from agents.writer import write
 from config import BLOG_URLS_FILE
 from utils.file_manager import mark_done, read_urls
 
@@ -55,11 +56,19 @@ def cmd_learn() -> None:
 
 def cmd_write(topic: str) -> None:
     print(f"주제: {topic}\n")
+
     outline_path = plan(topic)
-    if outline_path:
-        print(f"\n아웃라인 생성 완료: {outline_path}")
+    if not outline_path:
+        print("\n  [fail] 아웃라인 생성 실패 — 중단")
+        sys.exit(1)
+
+    print(f"\n  아웃라인 생성 완료: {outline_path}")
+
+    draft_path = write(outline_path)
+    if draft_path:
+        print(f"  초안 생성 완료: {draft_path}")
     else:
-        print("\n[fail] 아웃라인 생성 실패")
+        print("  [fail] 초안 생성 실패")
         sys.exit(1)
 
 

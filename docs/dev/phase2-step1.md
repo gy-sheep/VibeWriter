@@ -288,6 +288,40 @@ VibeWriter/
 
 ---
 
+## 7. 이후 변경 이력
+
+### Phase 2 Step 2 구현 시 `main.py` 변경 (2026-02-26)
+
+Step 2(`agents/writer.py`) 구현 완료 후 `cmd_write()`가 아래와 같이 확장됨.
+원본(위 스니펫)은 Step 1 시점의 구현이며, 현재 코드는 아래와 같이 변경됨.
+
+```python
+# Step 2 이후 현재 코드 (main.py)
+def cmd_write(topic: str) -> None:
+    print(f"주제: {topic}\n")
+
+    outline_path = plan(topic)
+    if not outline_path:
+        print("\n  [fail] 아웃라인 생성 실패 — 중단")
+        sys.exit(1)
+
+    print(f"\n  아웃라인 생성 완료: {outline_path}")
+
+    draft_path = write(outline_path)     # ← Step 2에서 추가
+    if draft_path:
+        print(f"  초안 생성 완료: {draft_path}")
+    else:
+        print("  [fail] 초안 생성 실패")
+        sys.exit(1)
+```
+
+**변경 요약**:
+- `write(outline_path)` 호출 추가 (`agents/writer.py` import)
+- 실패 시 `sys.exit(1)` 처리 통일
+- 출력 메시지 들여쓰기 및 표현 통일
+
+---
+
 ## 6. 검증 방법
 
 | 항목 | 확인 방법 |
