@@ -2,7 +2,7 @@
 
 > 세션 재시작 시 작업을 이어받기 위한 현재 상태 요약
 
-**최종 업데이트**: 2026-02-25
+**최종 업데이트**: 2026-02-26
 
 ---
 
@@ -47,19 +47,28 @@
 - `utils/logger.py` — 신규: 모듈별 logger (콘솔 WARNING+, 파일 DEBUG+, `logs/vibewriter.log`)
 - 전 모듈 예외 처리 강화: IOError / JSONDecodeError / TimeoutException / HTTPStatusError 등
 
+### Phase 2 Step 1: 주제 분석 및 목차 구성 ✅
+
+**구현된 모듈**:
+- `agents/planner.py` — 키워드 추출, 카테고리 추론(완전 단어 매칭), 스타일 가이드 로드, 아웃라인 생성
+  - 빈 주제 early return, `mkdir` OSError 처리, slug `untitled` fallback 등 방어 코드 완비
+- `main.py` — `write --topic` 서브커맨드 추가
+
+**출력**: `data/output/{YYYYMMDD}_{slug}_outline.json`
+
 ---
 
 ## 다음 작업
 
-### Phase 2 Step 1: 주제 분석 및 목차 구성
+### Phase 2 Step 2: 본문 생성
 
-**목표**: 주제를 입력하면 카테고리를 추론하고, 스타일 가이드를 로드해 섹션별 목차(아웃라인)를 생성
+**목표**: 아웃라인 JSON을 읽어 스타일 가이드 기반으로 섹션별 본문을 생성하고 `draft.md`로 저장
 
 **구현할 모듈**:
-- `agents/planner.py` (신규) — 주제 키워드 추출, 카테고리 추론, 스타일 가이드 로드, 아웃라인 생성
-- `main.py` — `write` 서브커맨드 추가
+- `agents/writer.py` (신규) — 아웃라인 로드, 섹션별 LLM 본문 생성, 스타일 가이드 반영
+- `main.py` — `write` 파이프라인에 WriterAgent 연결
 
-**상세 설계**: `docs/dev/phase2-step1.md` (미작성 — 개발 전 작성 필요)
+**상세 설계**: `docs/dev/phase2-step2.md` (미작성 — 개발 전 작성 필요)
 
 ---
 
@@ -71,14 +80,16 @@ VibeWriter/
 │   ├── crawler.py       # 크롤링 (httpx, 네이버 iframe 처리)
 │   ├── parser.py        # 본문 추출 (BeautifulSoup4)
 │   ├── analysis.py      # 카테고리 분류 + 톤앤매너 분석 (LLM)
-│   └── style_guide.py   # 스타일 가이드 생성 (카테고리별 집계)
+│   ├── style_guide.py   # 스타일 가이드 생성 (카테고리별 집계)
+│   └── planner.py       # 주제 분석 + 아웃라인 생성 (LLM)
 ├── data/
 │   ├── input/
 │   │   └── blog_urls.txt
 │   ├── raw_html/        # .gitignore
 │   ├── parsed_posts/    # .gitignore
 │   ├── analysis/        # .gitignore
-│   └── style_guides/    # {category}.md
+│   ├── style_guides/    # {category}.md
+│   └── output/          # {YYYYMMDD}_{slug}_outline.json (.gitignore)
 ├── utils/
 │   ├── file_manager.py  # URL 읽기/쓰기
 │   ├── ollama_client.py # Ollama REST API 래퍼
@@ -91,7 +102,8 @@ VibeWriter/
     │   ├── _template.md
     │   ├── phase1-step1-2.md
     │   ├── phase1-step3.md
-    │   └── phase1-step5.md
+    │   ├── phase1-step5.md
+    │   └── phase2-step1.md
     └── roadmap/DESIGN_SPEC.md
 ```
 
@@ -108,6 +120,7 @@ VibeWriter/
 | 스타일 가이드 저장 | 카테고리별 분리 파일 | WriterAgent가 필요한 카테고리만 LLM 컨텍스트에 로드 |
 | 어휘 집계 상위 N | `VOCAB_TOP_N = 15` | 글 수 증가 시 노이즈 방지, config에서 조정 가능 |
 | 로깅 | 콘솔 WARNING+ / 파일 DEBUG+ | 평시 출력 최소화, 문제 발생 시 로그 파일로 상세 추적 |
+| 카테고리 매칭 | `re.search(\b{cat}\b)` 완전 단어 매칭 | 부분 문자열 오탐 방지 (예: "tech review" → "tech" 오매칭) |
 
 ---
 

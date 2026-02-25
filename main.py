@@ -4,6 +4,7 @@ import sys
 from agents.analysis import add_tone_and_manner, analyze
 from agents.crawler import crawl
 from agents.parser import parse
+from agents.planner import plan
 from agents.style_guide import generate_style_guides
 from config import BLOG_URLS_FILE
 from utils.file_manager import mark_done, read_urls
@@ -52,16 +53,31 @@ def cmd_learn() -> None:
     generate_style_guides()
 
 
+def cmd_write(topic: str) -> None:
+    print(f"주제: {topic}\n")
+    outline_path = plan(topic)
+    if outline_path:
+        print(f"\n아웃라인 생성 완료: {outline_path}")
+    else:
+        print("\n[fail] 아웃라인 생성 실패")
+        sys.exit(1)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="vibewriter")
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("learn", help="블로그 URL을 학습해 스타일 가이드를 생성한다")
 
+    write_parser = subparsers.add_parser("write", help="주제를 입력해 블로그 아웃라인을 생성한다")
+    write_parser.add_argument("--topic", required=True, help="블로그 주제")
+
     args = parser.parse_args()
 
     if args.command == "learn":
         cmd_learn()
+    elif args.command == "write":
+        cmd_write(args.topic)
     else:
         parser.print_help()
         sys.exit(1)

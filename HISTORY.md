@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-02-26 — Phase 2 Step 1 구현 완료 ✅
+
+### Phase 2 Step 1: 주제 분석 및 목차 구성
+
+- `agents/planner.py` 신규 구현
+  - `plan(topic)` — 최상위 진입, 빈 주제 early return
+  - `_extract_keywords()` — LLM으로 SEO 키워드 5개 추출, fallback: `[topic]`
+  - `_infer_category()` — LLM 추론 + `re.search(\b{cat}\b)` 완전 단어 매칭, fallback: `"etc"`
+  - `_load_style_guide()` — 카테고리별 `.md` 로드, 없으면 경고 후 빈 문자열
+  - `_build_style_context()` — 문체·구조 섹션만 압축 추출해 LLM 컨텍스트로 전달
+  - `_generate_titles()` — SEO 제목 후보 3개 생성, fallback: `[topic]`
+  - `_generate_outline()` — 섹션별 아웃라인 JSON 생성, fallback: 5섹션 기본 아웃라인
+  - `_save_outline()` — `data/output/{YYYYMMDD}_{slug}_outline.json` 저장, `mkdir` OSError 처리
+  - `_make_slug()` — 정규식 후 빈 문자열이면 `"untitled"` 대체
+- `main.py` — `write --topic` 서브커맨드 및 `cmd_write()` 추가
+- `CLAUDE.md` — 코드 품질 규칙 (방어 코드 체크리스트) 추가
+
+---
+
 ## 2026-02-25 — Phase 1 Step 1~2 구현 완료 ✅
 
 ### 프로젝트 초기 설정
