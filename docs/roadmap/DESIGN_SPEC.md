@@ -131,7 +131,7 @@ VibeWriter/
 │   └── write_pipeline.py     # 생성 파이프라인
 ├── data/
 │   ├── input/
-│   │   └── urls.txt          # 학습할 블로그 URL 목록
+│   │   └── blog_urls.txt     # 학습할 블로그 URL 목록
 │   ├── raw_html/             # 크롤링 원본
 │   ├── parsed_posts/         # 정제된 본문
 │   ├── analysis/             # 분석 결과
@@ -144,7 +144,8 @@ VibeWriter/
 ├── utils/
 │   ├── ollama_client.py      # Ollama LLM 래퍼
 │   ├── file_manager.py       # 파일 읽기/쓰기 유틸
-│   └── humanize.py           # humanize 정책 유틸
+│   ├── logger.py             # 로깅 유틸 (콘솔 WARNING+, 파일 DEBUG+)
+│   └── humanize.py           # humanize 정책 유틸 (Phase 2)
 ├── config.py                 # 설정값 (모델명, 경로, 허용 카테고리 목록 등)
 ├── main.py                   # CLI 진입점
 ├── docs/

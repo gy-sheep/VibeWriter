@@ -150,10 +150,8 @@ VibeWriter/
     └── roadmap/
 ```
 
-> 이후 단계에서 추가될 모듈: `agents/style_guide.py`,
-> `utils/humanize.py`, `pipelines/learn_pipeline.py`
->
-> Step 3에서 추가된 모듈: `agents/analysis.py`, `utils/ollama_client.py`
+> Phase 1에서 추가된 모듈: `agents/analysis.py`, `agents/style_guide.py`, `utils/ollama_client.py`, `utils/logger.py`
+> 이후 단계에서 추가될 모듈: `utils/humanize.py`, `pipelines/learn_pipeline.py`
 
 ---
 

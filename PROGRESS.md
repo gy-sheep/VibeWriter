@@ -8,7 +8,7 @@
 
 ## 현재 완료 상태
 
-### Phase 1 Step 1~4 ✅
+### Phase 1 전체 ✅
 
 ### Phase 1 Step 1~2: 데이터 입력 + 콘텐츠 수집 및 전처리 ✅
 
@@ -19,54 +19,47 @@
 - `agents/parser.py` — BeautifulSoup4 본문 추출, 네이버 스마트에디터 선택자, 제목 정규화
 - `main.py` — CLI 진입점 (`python main.py learn`)
 
-**검증 완료**:
-- 브런치, 네이버 블로그 크롤링 및 본문 추출 확인
-- `# done` 처리, 실패 URL 스킵 동작 확인
-
 ### Phase 1 Step 3: 카테고리 분석 ✅
 
 **구현된 모듈**:
 - `utils/ollama_client.py` — `generate(prompt, model) -> str` / Ollama REST API 래퍼 (llama3.1:8b)
 - `agents/analysis.py` — LLM 카테고리 분류, etc fallback, 중복 스킵
-- `main.py` — parse 후 analyze() 호출 파이프라인 연결
-
-**검증 완료**:
-- travel / tech / lifestyle 카테고리 정확 분류 확인
-- 중복 파일 스킵 동작 확인
-
----
-
-## 다음 작업
 
 ### Phase 1 Step 4: 톤앤매너 분석 ✅
 
 **구현된 모듈**:
 - `agents/analysis.py` — `add_tone_and_manner()`: LLM 문체·어휘·구조 분석, 중복 스킵, fallback
-- `main.py` — `analyze()` 완료 후 `add_tone_and_manner()` 파이프라인 연결
+
+### Phase 1 Step 5: 스타일 가이드 생성 ✅
+
+**구현된 모듈**:
+- `agents/style_guide.py` — 카테고리별 analysis 파일 집계 → `data/style_guides/{category}.md` 생성
+- `config.py` — `VOCAB_TOP_N = 15` 추가
 
 **검증 완료**:
-- 7개 파일 `tone_and_manner` 필드 추가 성공
-- 중복 스킵 동작 확인
+- 12개 URL 학습 → lifestyle / review / tech / travel 4개 스타일 가이드 생성 성공
+- 중복 URL 재실행 시 skip 처리 확인
+- `data/style_guides/{category}.md` 파일 생성 확인
+
+### 전체 품질 개선 ✅
+
+**구현된 모듈**:
+- `utils/logger.py` — 신규: 모듈별 logger (콘솔 WARNING+, 파일 DEBUG+, `logs/vibewriter.log`)
+- 전 모듈 예외 처리 강화: IOError / JSONDecodeError / TimeoutException / HTTPStatusError 등
 
 ---
 
 ## 다음 작업
 
-### Phase 1 Step 5: 스타일 가이드 생성
+### Phase 2 Step 1: 주제 분석 및 목차 구성
 
-**현재 브랜치**: `feat/phase1/tone-analysis` (Step 5 작업 전 새 브랜치 생성 권장)
-
-**목표**: `analysis/*.json`의 톤앤매너 데이터를 카테고리별로 집계해 `style_guides/{category}.md` 생성
+**목표**: 주제를 입력하면 카테고리를 추론하고, 스타일 가이드를 로드해 섹션별 목차(아웃라인)를 생성
 
 **구현할 모듈**:
-- `agents/style_guide.py` (신규) — 카테고리별 analysis 파일 집계 → 스타일 가이드 Markdown 생성
+- `agents/planner.py` (신규) — 주제 키워드 추출, 카테고리 추론, 스타일 가이드 로드, 아웃라인 생성
+- `main.py` — `write` 서브커맨드 추가
 
-**핵심 규칙**:
-- 동일 카테고리 파일이 여러 개면 합산·평균·빈도 기준으로 집계
-- 기존 가이드 존재 시 병합 업데이트 (덮어쓰기 금지)
-- humanize 정책 항목 필수 포함
-
-**상세 설계**: `docs/dev/phase1-step5.md` (미작성 — 개발 전 작성 필요)
+**상세 설계**: `docs/dev/phase2-step1.md` (미작성 — 개발 전 작성 필요)
 
 ---
 
@@ -77,23 +70,28 @@ VibeWriter/
 ├── agents/
 │   ├── crawler.py       # 크롤링 (httpx, 네이버 iframe 처리)
 │   ├── parser.py        # 본문 추출 (BeautifulSoup4)
-│   └── analysis.py      # 카테고리 분류 (LLM, etc fallback)
+│   ├── analysis.py      # 카테고리 분류 + 톤앤매너 분석 (LLM)
+│   └── style_guide.py   # 스타일 가이드 생성 (카테고리별 집계)
 ├── data/
 │   ├── input/
 │   │   └── blog_urls.txt
 │   ├── raw_html/        # .gitignore
 │   ├── parsed_posts/    # .gitignore
-│   └── analysis/        # .gitignore
+│   ├── analysis/        # .gitignore
+│   └── style_guides/    # {category}.md
 ├── utils/
 │   ├── file_manager.py  # URL 읽기/쓰기
-│   └── ollama_client.py # Ollama REST API 래퍼
+│   ├── ollama_client.py # Ollama REST API 래퍼
+│   └── logger.py        # 로깅 유틸 (콘솔+파일)
+├── logs/                # .gitignore
 ├── config.py
 ├── main.py
 └── docs/
     ├── dev/
-    │   ├── _template.md       # step 문서 작성 포맷
+    │   ├── _template.md
     │   ├── phase1-step1-2.md
-    │   └── phase1-step3.md
+    │   ├── phase1-step3.md
+    │   └── phase1-step5.md
     └── roadmap/DESIGN_SPEC.md
 ```
 
@@ -108,6 +106,8 @@ VibeWriter/
 | 카테고리 방식 | 허용 목록 기반 정규화 | 자유 분류 시 파일명 불일치 문제 발생 |
 | 네이버 블로그 | iframe URL 재요청 | 메인 HTML에 본문 없음 (iframe 구조) |
 | 스타일 가이드 저장 | 카테고리별 분리 파일 | WriterAgent가 필요한 카테고리만 LLM 컨텍스트에 로드 |
+| 어휘 집계 상위 N | `VOCAB_TOP_N = 15` | 글 수 증가 시 노이즈 방지, config에서 조정 가능 |
+| 로깅 | 콘솔 WARNING+ / 파일 DEBUG+ | 평시 출력 최소화, 문제 발생 시 로그 파일로 상세 추적 |
 
 ---
 

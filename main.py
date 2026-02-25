@@ -4,6 +4,7 @@ import sys
 from agents.analysis import add_tone_and_manner, analyze
 from agents.crawler import crawl
 from agents.parser import parse
+from agents.style_guide import generate_style_guides
 from config import BLOG_URLS_FILE
 from utils.file_manager import mark_done, read_urls
 
@@ -46,6 +47,9 @@ def cmd_learn() -> None:
         success += 1
 
     print(f"\n완료: {success}개 성공 / {fail}개 실패")
+
+    print("\n--- 스타일 가이드 생성 ---")
+    generate_style_guides()
 
 
 def main() -> None:

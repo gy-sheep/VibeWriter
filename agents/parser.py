@@ -5,6 +5,9 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 
 from config import PARSED_POSTS_DIR
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 # 노이즈 제거 대상 태그
 _NOISE_TAGS = [
@@ -65,13 +68,20 @@ def parse(url: str, html_path: Path) -> Path | None:
     """
     PARSED_POSTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    html = html_path.read_text(encoding="utf-8")
+    try:
+        html = html_path.read_text(encoding="utf-8")
+    except OSError as e:
+        logger.error("HTML 파일 읽기 실패: path=%s, %s", html_path, e)
+        print(f"  [fail] HTML 파일 읽기 실패: {html_path.name}")
+        return None
+
     soup = BeautifulSoup(html, "html.parser")
 
     title = _extract_title(soup)
     content = _extract_content(soup)
 
     if not content:
+        logger.warning("본문 추출 실패 (200자 미만): url=%s", url)
         print(f"  [skip] 본문 추출 실패: {url}")
         return None
 
@@ -83,6 +93,12 @@ def parse(url: str, html_path: Path) -> Path | None:
     }
 
     output_path = PARSED_POSTS_DIR / html_path.with_suffix(".json").name
-    output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    try:
+        output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError as e:
+        logger.error("파싱 결과 저장 실패: path=%s, %s", output_path, e)
+        print(f"  [fail] 파싱 결과 저장 실패: {output_path.name}")
+        return None
 
     return output_path

@@ -72,7 +72,12 @@ data/parsed_posts/{slug}.json
 - `POST http://localhost:11434/api/generate` 호출 (httpx 동기)
 - 요청 바디: `{"model": "...", "prompt": "...", "stream": false}`
 - 응답에서 `response` 필드 추출 후 반환
-- Ollama 미실행 시 `ConnectionError` → 명확한 에러 메시지 출력 후 종료
+- 예외 처리:
+  - `ConnectError` → `SystemExit` (Ollama 미실행 시 명확한 메시지 출력)
+  - `TimeoutException` → `RuntimeError` (응답 시간 초과)
+  - `HTTPStatusError` → `RuntimeError` (HTTP 오류 상태 코드)
+  - `response` 필드 없음 → `ValueError`
+- 모든 요청/응답은 `utils/logger.py`로 DEBUG 레벨 기록
 
 ### `agents/analysis.py` — AnalysisAgent
 

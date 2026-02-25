@@ -22,6 +22,9 @@ OLLAMA_BASE_URL = "http://localhost:11434"
 # 허용 카테고리 목록
 CATEGORIES = ["tech", "travel", "food", "lifestyle", "review", "etc"]
 
+# 스타일 가이드
+VOCAB_TOP_N = 15  # 어휘 상위 N개 추출
+
 # 크롤러
 CRAWL_RETRY = 1
 CRAWL_DELAY = 1.0  # 초

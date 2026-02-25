@@ -4,7 +4,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from config import ANALYSIS_DIR, CATEGORIES, PARSED_POSTS_DIR
+from utils.logger import get_logger
 from utils.ollama_client import generate
+
+logger = get_logger(__name__)
 
 _CATEGORY_PROMPT = """\
 다음 블로그 글을 읽고, 아래 카테고리 중 정확히 하나를 선택하세요.
@@ -31,6 +34,7 @@ def _parse_category(response: str) -> str:
     if match:
         return match.group(1)
 
+    logger.warning("카테고리 파싱 실패, etc 적용: response=%r", response[:100])
     return "etc"
 
 
@@ -46,7 +50,13 @@ def analyze(json_path: Path) -> Path | None:
         print(f"  [skip] 이미 분석됨: {json_path.name}")
         return output_path
 
-    post = json.loads(json_path.read_text(encoding="utf-8"))
+    try:
+        post = json.loads(json_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        logger.error("parsed_posts 파일 읽기 실패: path=%s, %s", json_path, e)
+        print(f"  [fail] 파일 읽기 실패: {json_path.name}")
+        return None
+
     title = post.get("title", "")
     content = post.get("content", "")[:800]
 
@@ -59,6 +69,7 @@ def analyze(json_path: Path) -> Path | None:
     try:
         response = generate(prompt)
     except Exception as e:
+        logger.error("LLM 카테고리 분류 실패: slug=%s, %s", json_path.stem, e)
         print(f"  [fail] LLM 호출 실패: {e}")
         return None
 
@@ -73,7 +84,13 @@ def analyze(json_path: Path) -> Path | None:
         "analyzed_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError as e:
+        logger.error("분석 결과 저장 실패: path=%s, %s", output_path, e)
+        print(f"  [fail] 분석 결과 저장 실패: {output_path.name}")
+        return None
+
     return output_path
 
 
@@ -142,6 +159,7 @@ def _parse_tone(response: str) -> dict:
         except json.JSONDecodeError:
             pass
 
+    logger.warning("톤앤매너 파싱 실패, 기본값 적용: response=%r", response[:100])
     return _TONE_DEFAULT.copy()
 
 
@@ -150,7 +168,12 @@ def add_tone_and_manner(analysis_path: Path) -> bool:
     analysis JSON에 tone_and_manner 필드를 추가한다.
     이미 필드가 있으면 스킵한다. 성공 시 True, 실패 시 False를 반환한다.
     """
-    analysis = json.loads(analysis_path.read_text(encoding="utf-8"))
+    try:
+        analysis = json.loads(analysis_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        logger.error("analysis 파일 읽기 실패: path=%s, %s", analysis_path, e)
+        print(f"  [fail] analysis 파일 읽기 실패: {analysis_path.name}")
+        return False
 
     if "tone_and_manner" in analysis:
         print(f"  [skip] 톤앤매너 이미 분석됨: {analysis_path.name}")
@@ -159,10 +182,17 @@ def add_tone_and_manner(analysis_path: Path) -> bool:
     slug = analysis.get("slug", analysis_path.stem)
     parsed_path = PARSED_POSTS_DIR / f"{slug}.json"
     if not parsed_path.exists():
+        logger.error("parsed_posts 파일 없음: slug=%s", slug)
         print(f"  [fail] parsed_posts 파일 없음: {slug}.json")
         return False
 
-    post = json.loads(parsed_path.read_text(encoding="utf-8"))
+    try:
+        post = json.loads(parsed_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        logger.error("parsed_posts 파일 읽기 실패: path=%s, %s", parsed_path, e)
+        print(f"  [fail] parsed_posts 파일 읽기 실패: {parsed_path.name}")
+        return False
+
     title = post.get("title", "")
     content = post.get("content", "")[:2000]
 
@@ -170,12 +200,17 @@ def add_tone_and_manner(analysis_path: Path) -> bool:
 
     try:
         response = generate(prompt)
+        analysis["tone_and_manner"] = _parse_tone(response)
     except Exception as e:
+        logger.error("LLM 톤앤매너 분석 실패: slug=%s, %s", slug, e)
         print(f"  [fail] LLM 호출 실패 (톤앤매너): {e}")
         analysis["tone_and_manner"] = _TONE_DEFAULT.copy()
-        analysis_path.write_text(json.dumps(analysis, ensure_ascii=False, indent=2), encoding="utf-8")
-        return True
 
-    analysis["tone_and_manner"] = _parse_tone(response)
-    analysis_path.write_text(json.dumps(analysis, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        analysis_path.write_text(json.dumps(analysis, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError as e:
+        logger.error("톤앤매너 저장 실패: path=%s, %s", analysis_path, e)
+        print(f"  [fail] 톤앤매너 저장 실패: {analysis_path.name}")
+        return False
+
     return True

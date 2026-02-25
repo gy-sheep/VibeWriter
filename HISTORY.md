@@ -40,6 +40,31 @@
 
 ---
 
+## 2026-02-25 — Phase 1 Step 5 구현 완료 + 전체 품질 개선 ✅
+
+### Phase 1 Step 5 구현
+**구현 파일**:
+- `agents/style_guide.py`: `generate_style_guides()` — analysis 파일 카테고리별 집계, 스타일 가이드 Markdown 생성
+  - `_aggregate()`: writing_style 최빈값, vocabulary 빈도 상위 N개, structure 최빈값 집계
+  - `_render_markdown()`: humanize 정책 포함 카테고리별 Markdown 렌더링
+- `config.py`: `VOCAB_TOP_N = 15` 추가
+- `main.py`: URL 처리 완료 후 `generate_style_guides()` 파이프라인 연결
+- `docs/dev/phase1-step5.md`: Step 5 개발 기획 문서 작성
+
+**검증**:
+- 12개 URL → lifestyle(2) / review(4) / tech(5) / travel(1) 스타일 가이드 생성 성공
+- `None` 배열 필드 방어 처리 (`or []`) 버그 수정 확인
+
+### 전체 예외 처리 및 로깅 강화
+**구현 파일**:
+- `utils/logger.py`: 신규 — 콘솔 WARNING+, 파일 DEBUG+ 이중 출력, `logs/vibewriter.log`
+- `utils/ollama_client.py`: `TimeoutException`, `HTTPStatusError`, 응답 `KeyError` 처리 추가
+- `agents/parser.py`: `read_text`, `write_text` IOError 처리 + 로그
+- `agents/analysis.py`: `json.loads`, `write_text` 예외 처리 + 로그 (카테고리·톤앤매너 전체)
+- `agents/style_guide.py`: `tone_and_manner` None 방어, 파일 읽기/쓰기 예외 처리 + 로그
+
+---
+
 ## 2026-02-25 — Phase 1 Step 4 구현 완료 ✅
 
 ### Phase 1 Step 4 구현
