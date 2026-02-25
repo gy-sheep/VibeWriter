@@ -8,6 +8,8 @@
 
 ## 현재 완료 상태
 
+### Phase 1 Step 1~4 ✅
+
 ### Phase 1 Step 1~2: 데이터 입력 + 콘텐츠 수집 및 전처리 ✅
 
 **구현된 모듈**:
@@ -36,18 +38,35 @@
 
 ## 다음 작업
 
-### Phase 1 Step 4: 톤앤매너 분석
+### Phase 1 Step 4: 톤앤매너 분석 ✅
 
-**목표**: `analysis/{slug}.json`에 문체·어휘·구조 패턴 분석 결과를 추가 저장
+**구현된 모듈**:
+- `agents/analysis.py` — `add_tone_and_manner()`: LLM 문체·어휘·구조 분석, 중복 스킵, fallback
+- `main.py` — `analyze()` 완료 후 `add_tone_and_manner()` 파이프라인 연결
+
+**검증 완료**:
+- 7개 파일 `tone_and_manner` 필드 추가 성공
+- 중복 스킵 동작 확인
+
+---
+
+## 다음 작업
+
+### Phase 1 Step 5: 스타일 가이드 생성
+
+**현재 브랜치**: `feat/phase1/tone-analysis` (Step 5 작업 전 새 브랜치 생성 권장)
+
+**목표**: `analysis/*.json`의 톤앤매너 데이터를 카테고리별로 집계해 `style_guides/{category}.md` 생성
 
 **구현할 모듈**:
-- `agents/analysis.py` 확장 — LLM으로 문체·어휘·구조 패턴 분석 후 기존 분석 파일에 병합
+- `agents/style_guide.py` (신규) — 카테고리별 analysis 파일 집계 → 스타일 가이드 Markdown 생성
 
 **핵심 규칙**:
-- 카테고리 분류(Step 3) 결과 파일을 읽어 톤앤매너 필드 추가
-- LLM 응답 파싱 실패 시 기본값으로 fallback (종료 금지)
+- 동일 카테고리 파일이 여러 개면 합산·평균·빈도 기준으로 집계
+- 기존 가이드 존재 시 병합 업데이트 (덮어쓰기 금지)
+- humanize 정책 항목 필수 포함
 
-**상세 설계**: `docs/dev/phase1-step4.md` (미작성 — 개발 전 작성 필요)
+**상세 설계**: `docs/dev/phase1-step5.md` (미작성 — 개발 전 작성 필요)
 
 ---
 

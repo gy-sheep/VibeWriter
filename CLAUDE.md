@@ -10,10 +10,10 @@
 ## 실행
 
 ```bash
-uv sync                                   # 의존성 설치
-python main.py learn                      # 스타일 학습
-python main.py write --topic "주제"        # 블로그 글 생성
-uvicorn web.main:app --reload             # 웹 서버 (Phase 3)
+uv sync                                          # 의존성 설치
+uv run python main.py learn                      # 스타일 학습
+uv run python main.py write --topic "주제"        # 블로그 글 생성
+uv run uvicorn web.main:app --reload             # 웹 서버 (Phase 3)
 ```
 
 ## 참고 문서

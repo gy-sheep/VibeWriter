@@ -40,6 +40,26 @@
 
 ---
 
+## 2026-02-25 — Phase 1 Step 4 구현 완료 ✅
+
+### Phase 1 Step 4 구현
+**구현 파일**:
+- `agents/analysis.py`: `add_tone_and_manner()` — analysis JSON에 톤앤매너 필드 추가, 중복 스킵
+  - `_TONE_PROMPT`: 문체·어휘·구조 분석 프롬프트
+  - `_parse_tone()`: JSON 파싱 → 정규식 추출 → 기본값 순 fallback
+  - `_TONE_DEFAULT`: LLM 호출/파싱 실패 시 기본값
+- `main.py`: `analyze()` 다음 단계로 `add_tone_and_manner()` 파이프라인 연결
+
+**검증**:
+- 7개 `analysis/*.json`에 `tone_and_manner` 필드 추가 성공
+- `writing_style`, `vocabulary`, `structure` 필드 정상 분석 확인
+- 중복 스킵 (`[skip] 톤앤매너 이미 분석됨`) 동작 확인
+
+### 개발 기획 문서
+- `docs/dev/phase1-step4.md` — Step 4 개발 기획 문서 작성
+
+---
+
 ## 2026-02-25 — Phase 1 Step 3 구현 완료 ✅
 
 ### Phase 1 Step 3 구현

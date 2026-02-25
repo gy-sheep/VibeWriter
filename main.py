@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from agents.analysis import analyze
+from agents.analysis import add_tone_and_manner, analyze
 from agents.crawler import crawl
 from agents.parser import parse
 from config import BLOG_URLS_FILE
@@ -34,6 +34,10 @@ def cmd_learn() -> None:
 
         analysis_path = analyze(json_path)
         if analysis_path is None:
+            fail += 1
+            continue
+
+        if not add_tone_and_manner(analysis_path):
             fail += 1
             continue
 
