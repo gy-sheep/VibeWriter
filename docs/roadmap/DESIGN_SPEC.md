@@ -76,7 +76,7 @@
 | **OrchestratorAgent** | 파이프라인 흐름 제어, Agent 간 데이터 전달 |
 | **CrawlerAgent** | URL 크롤링 및 HTML 수집 |
 | **ParserAgent** | 본문 추출, 노이즈 제거, 정제 |
-| **AnalysisAgent** | 카테고리 분류, 문체·어휘·구조 패턴 분석 |
+| **AnalysisAgent** | 카테고리 분류(허용 목록 기반 정규화), 문체·어휘·구조 패턴 분석 |
 | **StyleGuideAgent** | 카테고리별 스타일 가이드 생성 및 업데이트 |
 | **PlannerAgent** | 주제 분석, 목차 구성, 키워드 선정 |
 | **WriterAgent** | 스타일 가이드 기반 본문 생성 |
@@ -145,7 +145,7 @@ VibeWriter/
 │   ├── ollama_client.py      # Ollama LLM 래퍼
 │   ├── file_manager.py       # 파일 읽기/쓰기 유틸
 │   └── humanize.py           # humanize 정책 유틸
-├── config.py                 # 설정값 (모델명, 경로 등)
+├── config.py                 # 설정값 (모델명, 경로, 허용 카테고리 목록 등)
 ├── main.py                   # CLI 진입점
 ├── docs/
 │   └── roadmap/
@@ -171,6 +171,8 @@ VibeWriter/
 
 **Step 3. 카테고리 분석**
 - AnalysisAgent: 글 내용 기반 카테고리 자동 분류
+- 카테고리는 `config.py`에 정의된 허용 목록에서만 선택 (자유 분류 금지)
+- 허용 목록에 없는 경우 `etc`로 분류
 - 카테고리별 글 클러스터링 (파일 분류 저장)
 
 **Step 4. 톤앤매너 분석**
