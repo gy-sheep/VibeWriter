@@ -39,3 +39,23 @@
 - `docs/dev/phase1-step1-2.md` — 구현 범위, 데이터 흐름, 파일 명세, 모듈 상세, 프로젝트 구조, 검증 방법
 
 ---
+
+## 2026-02-25 — Phase 1 Step 3 구현 완료 ✅
+
+### Phase 1 Step 3 구현
+**구현 파일**:
+- `utils/ollama_client.py`: `generate()` — httpx로 Ollama `/api/generate` 호출, 미실행 시 SystemExit
+- `agents/analysis.py`: `analyze()` — LLM 카테고리 분류, JSON/정규식 파싱, etc fallback, 중복 스킵
+- `main.py`: parse 완료 후 `analyze(json_path)` 호출 추가
+- `config.py`: `OLLAMA_MODEL` = `"mistral"` → `"llama3.1:8b"` (실제 설치 모델로 수정)
+
+**검증**:
+- 7개 `parsed_posts/*.json` 분류 결과: travel / tech / lifestyle 정확 분류
+- 중복 파일 스킵 (`[skip] 이미 분석됨`) 동작 확인
+
+### 개발 워크플로우 개선
+- `docs/dev/_template.md` — step 문서 작성 포맷 템플릿 생성
+- `CLAUDE.md` 참고 문서 섹션 개선 — template 파일 역할 명시, PROGRESS.md를 실행 컨텍스트로 강화
+- `docs/dev/phase1-step3.md` — Step 3 개발 기획 문서 작성
+
+---

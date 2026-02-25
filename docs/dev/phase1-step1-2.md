@@ -103,7 +103,7 @@ PARSED_POSTS_DIR = BASE_DIR / "data/parsed_posts"
 BLOG_URLS_FILE = INPUT_DIR / "blog_urls.txt"
 
 # LLM
-OLLAMA_MODEL = "mistral"
+OLLAMA_MODEL = "llama3.1:8b"
 
 # 허용 카테고리 목록 (Phase 1 Step 3에서 사용)
 CATEGORIES = ["tech", "travel", "food", "lifestyle", "review", "etc"]
@@ -150,8 +150,10 @@ VibeWriter/
     └── roadmap/
 ```
 
-> 이후 단계에서 추가될 모듈: `agents/analysis.py`, `agents/style_guide.py`,
-> `utils/ollama_client.py`, `utils/humanize.py`, `pipelines/learn_pipeline.py`
+> 이후 단계에서 추가될 모듈: `agents/style_guide.py`,
+> `utils/humanize.py`, `pipelines/learn_pipeline.py`
+>
+> Step 3에서 추가된 모듈: `agents/analysis.py`, `utils/ollama_client.py`
 
 ---
 

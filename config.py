@@ -16,7 +16,7 @@ OUTPUT_DIR = DATA_DIR / "output"
 BLOG_URLS_FILE = INPUT_DIR / "blog_urls.txt"
 
 # LLM
-OLLAMA_MODEL = "mistral"
+OLLAMA_MODEL = "llama3.1:8b"
 OLLAMA_BASE_URL = "http://localhost:11434"
 
 # 허용 카테고리 목록

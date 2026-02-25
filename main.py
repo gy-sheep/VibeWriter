@@ -1,6 +1,7 @@
 import argparse
 import sys
 
+from agents.analysis import analyze
 from agents.crawler import crawl
 from agents.parser import parse
 from config import BLOG_URLS_FILE
@@ -28,6 +29,11 @@ def cmd_learn() -> None:
 
         json_path = parse(url, html_path)
         if json_path is None:
+            fail += 1
+            continue
+
+        analysis_path = analyze(json_path)
+        if analysis_path is None:
             fail += 1
             continue
 

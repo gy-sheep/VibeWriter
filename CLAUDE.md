@@ -18,10 +18,12 @@ uvicorn web.main:app --reload             # 웹 서버 (Phase 3)
 
 ## 참고 문서
 
-- **세션 시작 시 반드시 읽기**: `PROGRESS.md` (현재 상태 및 다음 작업)
+- **세션 시작 시 반드시 읽기**: `PROGRESS.md` (현재 상태 및 다음 작업 — 구현에 필요한 정보 포함)
 - 아키텍처·Agent·데이터 흐름·Phase 상세: `docs/roadmap/DESIGN_SPEC.md`
 - 프로젝트 계획: `docs/roadmap/PROJECT_PLAN.md`
 - **git commit 전 반드시 읽기**: `docs/git/COMMIT_CONVENTION.md`
+- `docs/dev/_template.md`: step 문서 작성 포맷 — **step 문서 신규 작성 시 반드시 이 파일을 읽고 포맷을 따른다**
+- `docs/dev/phase{N}-step{N}.md`: Step별 상세 설계 (기록용, 필요 시에만 참조)
 
 ## 문서 관리
 

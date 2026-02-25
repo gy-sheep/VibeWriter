@@ -21,24 +21,33 @@
 - 브런치, 네이버 블로그 크롤링 및 본문 추출 확인
 - `# done` 처리, 실패 URL 스킵 동작 확인
 
+### Phase 1 Step 3: 카테고리 분석 ✅
+
+**구현된 모듈**:
+- `utils/ollama_client.py` — `generate(prompt, model) -> str` / Ollama REST API 래퍼 (llama3.1:8b)
+- `agents/analysis.py` — LLM 카테고리 분류, etc fallback, 중복 스킵
+- `main.py` — parse 후 analyze() 호출 파이프라인 연결
+
+**검증 완료**:
+- travel / tech / lifestyle 카테고리 정확 분류 확인
+- 중복 파일 스킵 동작 확인
+
 ---
 
 ## 다음 작업
 
-### Phase 1 Step 3: 카테고리 분석
+### Phase 1 Step 4: 톤앤매너 분석
 
-**목표**: `parsed_posts/`의 JSON을 읽어 카테고리 자동 분류
+**목표**: `analysis/{slug}.json`에 문체·어휘·구조 패턴 분석 결과를 추가 저장
 
 **구현할 모듈**:
-- `utils/ollama_client.py` — Ollama LLM 래퍼
-- `agents/analysis.py` — AnalysisAgent: 카테고리 분류 + 문체·어휘·구조 패턴 분석
+- `agents/analysis.py` 확장 — LLM으로 문체·어휘·구조 패턴 분석 후 기존 분석 파일에 병합
 
 **핵심 규칙**:
-- 카테고리는 `config.py`의 `CATEGORIES` 목록에서만 선택
-- 허용 목록 외 카테고리는 `etc`로 분류
-- 분류 결과는 `data/analysis/{slug}.json`으로 저장
+- 카테고리 분류(Step 3) 결과 파일을 읽어 톤앤매너 필드 추가
+- LLM 응답 파싱 실패 시 기본값으로 fallback (종료 금지)
 
-**참고 문서**: `docs/dev/phase1-step1-2.md`
+**상세 설계**: `docs/dev/phase1-step4.md` (미작성 — 개발 전 작성 필요)
 
 ---
 
@@ -48,18 +57,24 @@
 VibeWriter/
 ├── agents/
 │   ├── crawler.py       # 크롤링 (httpx, 네이버 iframe 처리)
-│   └── parser.py        # 본문 추출 (BeautifulSoup4)
+│   ├── parser.py        # 본문 추출 (BeautifulSoup4)
+│   └── analysis.py      # 카테고리 분류 (LLM, etc fallback)
 ├── data/
 │   ├── input/
 │   │   └── blog_urls.txt
 │   ├── raw_html/        # .gitignore
-│   └── parsed_posts/    # .gitignore
+│   ├── parsed_posts/    # .gitignore
+│   └── analysis/        # .gitignore
 ├── utils/
-│   └── file_manager.py  # URL 읽기/쓰기
+│   ├── file_manager.py  # URL 읽기/쓰기
+│   └── ollama_client.py # Ollama REST API 래퍼
 ├── config.py
 ├── main.py
 └── docs/
-    ├── dev/phase1-step1-2.md
+    ├── dev/
+    │   ├── _template.md       # step 문서 작성 포맷
+    │   ├── phase1-step1-2.md
+    │   └── phase1-step3.md
     └── roadmap/DESIGN_SPEC.md
 ```
 
