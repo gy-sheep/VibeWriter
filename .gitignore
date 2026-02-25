@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+
+# Data (크롤링 결과, 생성 파일 등)
+data/raw_html/
+data/parsed_posts/
+data/analysis/
+data/output/
+
+# Style guides (생성된 가이드, 직접 작성한 가이드는 포함 가능)
+# data/style_guides/
+
+# 환경 설정
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
