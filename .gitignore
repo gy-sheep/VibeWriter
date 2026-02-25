@@ -20,8 +20,8 @@ data/parsed_posts/
 data/analysis/
 data/output/
 
-# Style guides (생성된 가이드, 직접 작성한 가이드는 포함 가능)
-# data/style_guides/
+# Style guides (생성 파일, 로컬에서만 사용)
+data/style_guides/
 
 # 환경 설정
 .env
