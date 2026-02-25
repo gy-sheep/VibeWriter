@@ -2,7 +2,7 @@
 
 > 세션 재시작 시 작업을 이어받기 위한 현재 상태 요약
 
-**최종 업데이트**: 2026-02-26
+**최종 업데이트**: 2026-02-26 (Phase 2 완료)
 
 ---
 
@@ -56,6 +56,33 @@
 
 **출력**: `data/output/{YYYYMMDD}_{slug}_outline.json`
 
+### Phase 2 Step 3: 품질 검증 및 humanize ✅
+
+**구현된 모듈**:
+- `utils/humanize.py` (신규) — 규칙 기반 텍스트 정제
+  - `remove_foreign_chars()`: 한자·키릴·아랍 등 외국 문자 제거
+  - `remove_ai_phrases()`: AI 과잉 표현 regex 제거
+  - `diversify_conjunctions()`: 반복 접속사 탐지·교체
+  - `detect_repetitive_phrases()`: 2어절 bi-gram 반복 어구 탐지
+- `agents/quality.py` (신규) — 품질 검증 및 LLM polish
+  - `_check_style()`: 문장 길이 단조로움·AI 표현 잔존·반복 접속사·반복 어구 4항목 체크
+  - `_polish()`: 섹션별 LLM 다듬기 (맞춤법·반복 표현·문장 리듬), 길이 이탈 ±40% fallback
+  - `quality_check()`: 최상위 진입점, final.md 저장
+- `agents/writer.py` — `_SYSTEM_PROMPT` 강화
+  - 가짜 경험(타인 이야기) 생성 금지
+  - 외국 문자 혼입 금지
+  - 반복 표현 금지
+  - 한국어 맞춤법·문법 정확성 요구
+- `main.py` — `write` 파이프라인에 `quality_check()` 연결
+
+**출력**: `data/output/{YYYYMMDD}_{slug}_final.md`
+
+**검증 완료**:
+- 제주 여행 3박4일 후기 → final.md 생성, 한자·비표준 라틴·키릴 문자 제거 확인
+- 반복 어구 탐지("이전 모델보다", "CPU와 GPU가") 정상 동작 확인
+- LLM 길이 이탈 fallback 정상 동작 확인
+- 전체 파이프라인 단일 명령어로 동작 확인
+
 ### Phase 2 Step 2: 본문 생성 ✅
 
 **구현된 모듈**:
@@ -78,16 +105,20 @@
 
 ## 다음 작업
 
-### Phase 2 Step 3: 품질 검증 및 humanize
+### Phase 3: 웹 인터페이스 구축
 
-**목표**: draft.md 본문의 AI 티 제거, 스타일 가이드 준수 여부 체크, 최종 Markdown 저장
+**목표**: 브라우저에서 학습·생성 기능을 사용할 수 있는 로컬 웹 UI
 
-**구현할 모듈**:
-- `agents/quality.py` (신규) — 반복 어휘 제거, 접속사 다양화, 문장 길이 리듬 조정
-- `utils/humanize.py` (신규) — humanize 정책 핵심 로직
-- `main.py` — `write` 파이프라인에 QualityAgent 연결
+**구현할 내용**:
+- `web/main.py` — FastAPI 앱 진입점
+- `web/routers/` — learn / write API 라우터
+- `web/templates/` — Jinja2 HTML 템플릿
+- WebSocket 또는 SSE로 진행 상태 실시간 표시
+- 생성된 글 Markdown 렌더링 화면
 
-**상세 설계**: `docs/dev/phase2-step3.md` (개발 전 작성 필요)
+**실행**: `uv run uvicorn web.main:app --reload`
+
+**상세 설계**: `docs/dev/phase3-step1.md` (개발 전 작성 필요)
 
 ---
 
@@ -101,7 +132,8 @@ VibeWriter/
 │   ├── analysis.py      # 카테고리 분류 + 톤앤매너 분석 (LLM)
 │   ├── style_guide.py   # 스타일 가이드 생성 (카테고리별 집계)
 │   ├── planner.py       # 주제 분석 + 아웃라인 생성 (LLM)
-│   └── writer.py        # 섹션별 본문 생성 · draft.md 저장 (LLM)
+│   ├── writer.py        # 섹션별 본문 생성 · draft.md 저장 (LLM)
+│   └── quality.py       # 스타일 체크 + LLM polish · final.md 저장
 ├── data/
 │   ├── input/
 │   │   └── blog_urls.txt
@@ -113,7 +145,8 @@ VibeWriter/
 ├── utils/
 │   ├── file_manager.py  # URL 읽기/쓰기
 │   ├── ollama_client.py # Ollama REST API 래퍼
-│   └── logger.py        # 로깅 유틸 (콘솔+파일)
+│   ├── logger.py        # 로깅 유틸 (콘솔+파일)
+│   └── humanize.py      # 규칙 기반 AI 표현 제거·외국 문자 제거·접속사 다양화
 ├── logs/                # .gitignore
 ├── config.py
 ├── main.py

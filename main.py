@@ -5,6 +5,7 @@ from agents.analysis import add_tone_and_manner, analyze
 from agents.crawler import crawl
 from agents.parser import parse
 from agents.planner import plan
+from agents.quality import quality_check
 from agents.style_guide import generate_style_guides
 from agents.writer import write
 from config import BLOG_URLS_FILE
@@ -65,11 +66,16 @@ def cmd_write(topic: str) -> None:
     print(f"\n  아웃라인 생성 완료: {outline_path}")
 
     draft_path = write(outline_path)
-    if draft_path:
-        print(f"  초안 생성 완료: {draft_path}")
-    else:
-        print("  [fail] 초안 생성 실패")
+    if not draft_path:
+        print("  [fail] 초안 생성 실패 — 중단")
         sys.exit(1)
+    print(f"  초안 생성 완료: {draft_path}")
+
+    final_path = quality_check(draft_path)
+    if final_path:
+        print(f"  품질 검증 완료: {final_path}")
+    else:
+        print("  [warn] 품질 검증 실패 — draft를 최종 결과로 사용")
 
 
 def main() -> None:

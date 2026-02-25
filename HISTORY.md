@@ -4,6 +4,33 @@
 
 ---
 
+## 2026-02-26 — Phase 2 Step 3 구현 완료 ✅
+
+### Phase 2 Step 3: 품질 검증 및 humanize
+
+**구현 파일**:
+- `utils/humanize.py` 신규: 규칙 기반 텍스트 정제
+  - `remove_foreign_chars()`: 한자·키릴·아랍·태국 등 외국 문자 제거, 헤더·주석 보존
+  - `remove_ai_phrases()`: "물론입니다", "효율적으로" 등 AI 과잉 표현 regex 제거
+  - `diversify_conjunctions()`: 4문장 이내 동일 접속사 재등장 시 대안 표현으로 교체
+  - `detect_repetitive_phrases()`: 2어절 bi-gram 반복 어구 탐지 (최대 5개 반환)
+- `agents/quality.py` 신규: 스타일 체크 + LLM polish
+  - `_check_style()`: 4항목 체크 (문장 길이 단조로움·AI 표현·반복 접속사·반복 어구)
+  - `_polish_section()`: 섹션별 LLM 다듬기, 길이 이탈 ±40% fallback
+  - `quality_check()`: draft.md → humanize → 체크 → polish → final.md
+- `agents/writer.py` `_SYSTEM_PROMPT` 강화:
+  - 타인 경험 지어내기 금지, 외국 문자 금지, 반복 표현 금지, 맞춤법 정확성 요구
+- `main.py`: `quality_check()` import 및 `cmd_write()` 연결
+- `.claude/commands/commit.md`: `/commit` 승인 1회 통합 구조로 개선 (흐름 단절 방지)
+
+**검증**:
+- 전체 파이프라인 (outline → draft → final) 단일 명령어 동작 확인
+- 한자(`美`, `秋`), 키릴(`польз`), 베트남어(`trải`) 제거 확인
+- 반복 어구("이전 모델보다", "CPU와 GPU가") 탐지 확인
+- LLM 재작성 감지 후 원본 자동 복원(fallback) 확인
+
+---
+
 ## 2026-02-26 — Phase 2 Step 1 구현 완료 ✅
 
 ### Phase 2 Step 1: 주제 분석 및 목차 구성
