@@ -162,11 +162,12 @@ VibeWriter/
 > 목표: 블로그 URL을 입력하면 카테고리별 스타일 가이드를 자동 생성
 
 **Step 1. 데이터 입력**
-- `data/input/urls.txt` 파일에서 URL 목록 읽기
+- `data/input/blog_urls.txt` 파일에서 URL 목록 읽기
 - 학습 완료된 URL은 자동으로 주석 처리 (`# done`)
 
 **Step 2. 콘텐츠 수집 및 전처리**
 - CrawlerAgent: URL 순회 크롤링, 실패 시 재시도 1회
+- 네이버 블로그 등 iframe 구조 페이지는 iframe URL로 재요청하여 실제 본문 수집
 - ParserAgent: 본문 텍스트 추출, 광고·메뉴 등 노이즈 제거
 
 **Step 3. 카테고리 분석**

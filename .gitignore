@@ -14,6 +14,7 @@ venv/
 env/
 
 # Data (크롤링 결과, 생성 파일 등)
+data/input/blog_urls.txt
 data/raw_html/
 data/parsed_posts/
 data/analysis/

@@ -12,12 +12,20 @@
 ```bash
 uv sync                                   # 의존성 설치
 python main.py learn                      # 스타일 학습
-python main.py write --topic "주제"       # 블로그 글 생성
+python main.py write --topic "주제"        # 블로그 글 생성
 uvicorn web.main:app --reload             # 웹 서버 (Phase 3)
 ```
 
 ## 참고 문서
 
+- **세션 시작 시 반드시 읽기**: `PROGRESS.md` (현재 상태 및 다음 작업)
 - 아키텍처·Agent·데이터 흐름·Phase 상세: `docs/roadmap/DESIGN_SPEC.md`
 - 프로젝트 계획: `docs/roadmap/PROJECT_PLAN.md`
 - **git commit 전 반드시 읽기**: `docs/git/COMMIT_CONVENTION.md`
+
+## 문서 관리
+
+- **Phase/Step 구현 완료 시**: `PROGRESS.md` 업데이트를 제안한다
+- **세션 종료 감지 시** ("오늘은 여기까지", "커밋하고 끝낼게" 등): `PROGRESS.md` 업데이트 여부를 확인한다
+- **`/commit` 실행 시**: 커밋 전에 `PROGRESS.md` 반영 여부를 자동으로 확인한다
+- 업데이트 시 완료된 내용은 `HISTORY.md`로 이동하고, `PROGRESS.md`는 다음 작업 기준으로 유지한다
