@@ -84,6 +84,7 @@ VibeWriter/
 
 | 항목 | 결정 | 이유 |
 |------|------|------|
+| 패키지 관리 | uv 사용 | pyproject.toml (PEP 621) + hatchling 빌드, 빠른 의존성 해결 |
 | URL 입력 파일 위치 | `data/input/blog_urls.txt` | 파이프라인 실행 중 변경(# done)되는 데이터 파일 |
 | 카테고리 방식 | 허용 목록 기반 정규화 | 자유 분류 시 파일명 불일치 문제 발생 |
 | 네이버 블로그 | iframe URL 재요청 | 메인 HTML에 본문 없음 (iframe 구조) |
