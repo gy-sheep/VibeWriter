@@ -103,7 +103,7 @@ PARSED_POSTS_DIR = BASE_DIR / "data/parsed_posts"
 BLOG_URLS_FILE = INPUT_DIR / "blog_urls.txt"
 
 # LLM
-OLLAMA_MODEL = "llama3.1:8b"
+OLLAMA_MODEL = "gemma3:27b"
 
 # 허용 카테고리 목록 (Phase 1 Step 3에서 사용)
 CATEGORIES = ["tech", "travel", "food", "lifestyle", "review", "etc"]

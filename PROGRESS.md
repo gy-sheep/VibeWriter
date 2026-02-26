@@ -2,7 +2,7 @@
 
 > 세션 재시작 시 작업을 이어받기 위한 현재 상태 요약
 
-**최종 업데이트**: 2026-02-26 (Phase 2 완료)
+**최종 업데이트**: 2026-02-26 (Phase 2 완료, 안정성 개선 및 ResearchAgent 설계)
 
 ---
 
@@ -105,7 +105,28 @@
 
 ## 다음 작업
 
-### Phase 3: 웹 인터페이스 구축
+### Phase 2 Step 0: ResearchAgent 구현 (팩트 수집)
+
+**목표**: 주제 입력 시 Gemini API로 사실 기반 정보를 수집해 생성 파이프라인에 컨텍스트로 전달
+
+**구현할 내용**:
+- `agents/researcher.py` (신규)
+  - [로컬 Ollama] 주제 → 검색 쿼리 10개 생성
+  - [Gemini API 무료] 각 쿼리로 응답 수집 (google-generativeai 패키지)
+  - [로컬 Ollama] 수집 응답 요약·중복 제거·핵심 팩트 선별
+  - `data/output/{slug}_research.json` 저장
+- `agents/planner.py` — research.json 컨텍스트 주입
+- `agents/writer.py` — research.json 컨텍스트 주입
+- `config.py` — `GEMINI_API_KEY` 환경변수 연동
+
+**사전 준비**: Google AI Studio에서 무료 API 키 발급 필요
+- https://aistudio.google.com/ → "Get API key"
+
+**상세 설계**: `docs/dev/phase2-step0.md` (개발 전 작성 필요)
+
+---
+
+### Phase 3: 웹 인터페이스 구축 (ResearchAgent 완료 후 진행)
 
 **목표**: 브라우저에서 학습·생성 기능을 사용할 수 있는 로컬 웹 UI
 
@@ -131,6 +152,7 @@ VibeWriter/
 │   ├── parser.py        # 본문 추출 (BeautifulSoup4)
 │   ├── analysis.py      # 카테고리 분류 + 톤앤매너 분석 (LLM)
 │   ├── style_guide.py   # 스타일 가이드 생성 (카테고리별 집계)
+│   ├── researcher.py    # 팩트 수집 (Gemini API + 로컬 LLM) ← 구현 예정
 │   ├── planner.py       # 주제 분석 + 아웃라인 생성 (LLM)
 │   ├── writer.py        # 섹션별 본문 생성 · draft.md 저장 (LLM)
 │   └── quality.py       # 스타일 체크 + LLM polish · final.md 저장
@@ -156,8 +178,12 @@ VibeWriter/
     │   ├── phase1-step1-2.md
     │   ├── phase1-step3.md
     │   ├── phase1-step5.md
-    │   └── phase2-step1.md
-    └── roadmap/DESIGN_SPEC.md
+    │   ├── phase2-step2.md
+    │   ├── phase2-step3.md
+    │   └── phase2-step4.md
+    └── roadmap/
+        ├── DESIGN_SPEC.md
+        └── PIPELINE_OVERVIEW.md  # 전체 파이프라인 흐름 한눈에 보기
 ```
 
 ---

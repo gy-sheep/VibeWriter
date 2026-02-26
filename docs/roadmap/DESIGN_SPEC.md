@@ -31,6 +31,7 @@
 |------|------|------|
 | Language | Python 3.11+ | |
 | LLM Runtime | Ollama | 로컬 모델 (예: Mistral, Llama 3) |
+| 팩트 수집 LLM | Gemini API 무료 티어 | ResearchAgent 전용, 유료 전환 금지 |
 | Web Framework | FastAPI | 로컬 서버용 |
 | CLI 실행 | Claude Code CLI | 개발·테스트용 |
 | 크롤링 | BeautifulSoup4 + httpx | 정적 페이지 우선 |
@@ -38,7 +39,8 @@
 
 ### 2.2 개발 원칙
 
-- **무료·로컬 LLM만 사용** — 외부 유료 API 사용 금지
+- **생성·분석은 로컬 LLM만 사용** — 외부 유료 API 사용 금지
+- **팩트 수집은 Gemini API 무료 티어 허용** — ResearchAgent 전용, 유료 전환 금지
 - **로컬 실행 전제** — 인터넷 없이도 핵심 기능 동작
 - **MVP 우선** — 각 Phase 최소 기능 완성 후 다음 Phase로 진행
 - **모듈 단위 설계** — 각 기능을 독립 Agent로 분리
@@ -63,10 +65,10 @@
     ▼             ▼
 [학습 파이프라인]   [생성 파이프라인]
     │                   │
-    ├─ CrawlerAgent      ├─ PlannerAgent
-    ├─ ParserAgent       ├─ WriterAgent
-    ├─ AnalysisAgent     └─ QualityAgent
-    └─ StyleGuideAgent
+    ├─ CrawlerAgent      ├─ ResearchAgent  ← Gemini + 로컬 LLM
+    ├─ ParserAgent       ├─ PlannerAgent
+    ├─ AnalysisAgent     ├─ WriterAgent
+    └─ StyleGuideAgent   └─ QualityAgent
 ```
 
 ### 3.2 Agent 역할 정의
@@ -78,8 +80,9 @@
 | **ParserAgent** | 본문 추출, 노이즈 제거, 정제 |
 | **AnalysisAgent** | 카테고리 분류(허용 목록 기반 정규화), 문체·어휘·구조 패턴 분석 |
 | **StyleGuideAgent** | 카테고리별 스타일 가이드 생성 및 업데이트 |
-| **PlannerAgent** | 주제 분석, 목차 구성, 키워드 선정 |
-| **WriterAgent** | 스타일 가이드 기반 본문 생성 |
+| **ResearchAgent** | 주제 관련 팩트 수집·요약 — 로컬 LLM이 쿼리 생성, Gemini API가 응답, 로컬 LLM이 요약 |
+| **PlannerAgent** | 주제 분석, 목차 구성, 키워드 선정 (팩트 컨텍스트 활용) |
+| **WriterAgent** | 스타일 가이드 + 팩트 컨텍스트 기반 본문 생성 |
 | **QualityAgent** | 스타일 일관성 검증, humanize 처리 |
 
 ### 3.3 데이터 흐름
@@ -102,13 +105,16 @@ StyleGuideAgent ──→ style_guides/
 [주제 입력] ─────────────┘
    │
    ▼
-PlannerAgent ──→ outline.json
+ResearchAgent ──→ output/{slug}_research.json   ← Gemini + 로컬 LLM
    │
    ▼
-WriterAgent ──→ draft.md
+PlannerAgent ──→ output/{slug}_outline.json
    │
    ▼
-QualityAgent ──→ output/final_post.md
+WriterAgent ──→ output/{slug}_draft.md
+   │
+   ▼
+QualityAgent ──→ output/{slug}_final.md
 ```
 
 ---
@@ -123,6 +129,7 @@ VibeWriter/
 │   ├── parser.py
 │   ├── analysis.py
 │   ├── style_guide.py
+│   ├── researcher.py         # 팩트 수집 (Gemini API + 로컬 LLM)
 │   ├── planner.py
 │   ├── writer.py
 │   └── quality.py
@@ -197,13 +204,19 @@ VibeWriter/
 ### Phase 2 : 블로그 생성 파이프라인 구축
 > 목표: 주제를 입력하면 학습된 스타일로 완성된 블로그 글 생성
 
+**Step 0. 팩트 수집 (ResearchAgent)** ← 신규 추가
+- [로컬 LLM] 주제에서 검색 쿼리 10개 자동 생성
+- [Gemini API 무료] 각 쿼리로 응답 수집 (10회 호출)
+- [로컬 LLM] 수집된 응답 요약·중복 제거·핵심 팩트 선별
+- `data/output/{slug}_research.json` 저장
+
 **Step 1. 주제 분석 및 목차 구성**
 - PlannerAgent: 주제 키워드 추출, SEO 고려 제목 후보 생성
 - 카테고리 자동 추론 → 해당 스타일 가이드 로드
-- 섹션별 목차(아웃라인) 생성
+- 팩트 컨텍스트(research.json) 반영하여 섹션별 목차(아웃라인) 생성
 
 **Step 2. 본문 생성**
-- WriterAgent: 스타일 가이드 + 아웃라인 기반 섹션별 본문 생성
+- WriterAgent: 스타일 가이드 + 아웃라인 + 팩트 컨텍스트 기반 섹션별 본문 생성
 - Ollama 로컬 모델 사용, 섹션 단위로 분할 생성
 
 **Step 3. 품질 검증 및 humanize**

@@ -2,23 +2,15 @@
 
 ## 핵심 제약 (반드시 준수)
 
-- **LLM**: Ollama 로컬 모델만 사용 — 외부 유료 API 절대 금지
+- **LLM**: 생성·분석은 Ollama 로컬 모델 사용 — 외부 유료 API 절대 금지
+- **팩트 수집**: Gemini API 무료 티어 허용 (ResearchAgent 전용, 유료 전환 금지)
 - **저장**: 로컬 파일(JSON/Markdown)만 사용 — DB 없음
 - **humanize**: 모든 LLM 생성 텍스트에 `utils/humanize.py` 정책 적용 필수
 - **단계별 진행**: Phase별 최소 기능 완성 후 다음 Phase로 이동
 
 ## 코드 품질 규칙
 
-**신규 구현 또는 수정 후 반드시 아래 방어 코드 체크리스트를 확인한다.**
-
-| 항목 | 확인 내용 |
-|------|----------|
-| 입력값 검증 | 빈 문자열·None·공백 전용 입력에 대한 early return 처리 |
-| 파일 I/O | `open`, `read_text`, `write_text`, `mkdir` 등 모든 파일 작업을 `try/except OSError`로 감쌈 |
-| LLM 응답 파싱 | JSON 파싱 실패·빈 응답·예상 외 형식에 대한 fallback 처리 |
-| 예외 전파 | 내부 함수의 예외가 상위 호출자까지 비처리 상태로 전파되지 않는지 확인 |
-| 정규식·문자열 매칭 | 부분 문자열 오탐 방지 — 카테고리·키워드 매칭은 완전 단어(`\b`) 기준 |
-| 외부 호출 실패 | httpx/Ollama 등 외부 의존 호출은 항상 `except` + 로그 + fallback 처리 |
+- 신규 구현 또는 수정 후 반드시 `/check` 로 방어 코드를 검증한다
 
 ## 실행
 
@@ -32,6 +24,7 @@ uv run uvicorn web.main:app --reload             # 웹 서버 (Phase 3)
 ## 참고 문서
 
 - **세션 시작 시 반드시 읽기**: `PROGRESS.md` (현재 상태 및 다음 작업 — 구현에 필요한 정보 포함)
+- 전체 파이프라인 흐름 한눈에 보기: `docs/roadmap/PIPELINE_OVERVIEW.md`
 - 아키텍처·Agent·데이터 흐름·Phase 상세: `docs/roadmap/DESIGN_SPEC.md`
 - 프로젝트 계획: `docs/roadmap/PROJECT_PLAN.md`
 - **git commit 전 반드시 읽기**: `docs/git/COMMIT_CONVENTION.md`

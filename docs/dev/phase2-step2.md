@@ -1,7 +1,7 @@
-# Phase 2 · Step 2 개발 기획
+# Phase 2 · Step 1 개발 기획
 
-> **범위**: 본문 생성
-> **목표**: 아웃라인 JSON 로드 → 스타일 가이드 기반 섹션별 LLM 본문 생성 → `draft.md` 저장
+> **범위**: 주제 분석 및 목차 구성
+> **목표**: 사용자 주제 입력 → 카테고리 추론 + 스타일 가이드 로드 → 섹션별 아웃라인 JSON 생성
 
 ---
 
@@ -9,47 +9,59 @@
 
 | Step | 기능 | 담당 모듈 |
 |------|------|----------|
-| Step 2 | 아웃라인 JSON 로드 | `agents/writer.py` |
-| Step 2 | 카테고리 스타일 가이드 로드 | `agents/writer.py` |
-| Step 2 | 섹션별 LLM 본문 생성 (이전 섹션 컨텍스트 포함) | `agents/writer.py` |
-| Step 2 | humanize 정책을 프롬프트에 내장 | `agents/writer.py` |
-| Step 2 | 섹션 조합 → Markdown draft 구성 | `agents/writer.py` |
-| Step 2 | `{slug}_draft.md` 저장 | `agents/writer.py` |
-| Step 2 | `main.py` write 파이프라인에 WriterAgent 연결 | `main.py` |
+| Step 1 | 주제에서 핵심 키워드 추출 (LLM) | `agents/planner.py` |
+| Step 1 | 주제 기반 카테고리 추론 → 허용 목록 정규화 | `agents/planner.py` |
+| Step 1 | 해당 카테고리 스타일 가이드 로드 | `agents/planner.py` |
+| Step 1 | SEO 고려 제목 후보 3개 생성 (LLM) | `agents/planner.py` |
+| Step 1 | 섹션별 목차(아웃라인) 생성 (LLM, 스타일 가이드 반영) | `agents/planner.py` |
+| Step 1 | 아웃라인 JSON 저장 | `agents/planner.py` |
+| Step 1 | `main.py`에 `write` 서브커맨드 추가 | `main.py` |
 
 ---
 
 ## 2. 데이터 흐름
 
 ```
-data/output/{YYYYMMDD}_{slug}_outline.json
+[사용자 입력: --topic "맥북 프로 M3 리뷰"]
         │
-        ▼ (아웃라인 + 스타일 가이드 경로 로드)
-  [WriterAgent]
-        │ 카테고리 스타일 가이드 경로
+        ▼ (키워드 추출 · 카테고리 추론)
+  [PlannerAgent]
+        │ 카테고리명 (허용 목록 정규화)
         ▼
   data/style_guides/{category}.md  (기존 파일 로드)
         │
-        ▼ (섹션별 LLM 생성, 이전 섹션 컨텍스트 포함, humanize 프롬프트 내장)
-  [WriterAgent — 섹션 N회 LLM 호출]
+        ▼ (제목 후보 + 아웃라인 생성, 스타일 가이드 컨텍스트 반영)
+  [PlannerAgent — LLM 호출]
         │
-        ▼ (섹션 조합 → Markdown 구성)
-  data/output/{YYYYMMDD}_{slug}_draft.md
+        ▼
+  data/output/{YYYYMMDD}_{slug}_outline.json
 ```
 
 ---
 
 ## 3. 파일 명세
 
-### 입력 1 — 아웃라인 JSON
+### 입력 1 — CLI 인자
+
+```
+uv run python main.py write --topic "맥북 프로 M3 리뷰"
+```
+
+### 입력 2 — 스타일 가이드 (기존 파일)
+
+**`data/style_guides/{category}.md`**
+- Phase 1에서 생성된 카테고리별 스타일 가이드 Markdown 파일
+- 해당 카테고리 파일이 없으면 스타일 가이드 없이 진행하고 경고 출력
+
+### 출력
 
 **`data/output/{YYYYMMDD}_{slug}_outline.json`**
 ```json
 {
   "topic": "맥북 프로 M3 리뷰",
   "category": "review",
-  "slug": "20260226_맥북프로M3리뷰",
-  "created_at": "2026-02-26T10:00:00+00:00",
+  "slug": "20260225_맥북프로M3리뷰",
+  "created_at": "2026-02-25T10:00:00+09:00",
   "keywords": ["맥북 프로", "M3 칩", "애플 실리콘", "성능 테스트", "배터리"],
   "title_candidates": [
     "맥북 프로 M3 3개월 써본 솔직 후기",
@@ -58,154 +70,160 @@ data/output/{YYYYMMDD}_{slug}_outline.json
   ],
   "style_guide_path": "data/style_guides/review.md",
   "outline": [
-    {"section": 1, "title": "들어가며", "type": "opening", "description": "구매 계기와 첫 인상을 구체적 상황으로 시작", "estimated_chars": 300},
-    {"section": 2, "title": "성능 테스트 결과", "type": "body", "description": "벤치마크 수치와 체감 속도 비교", "estimated_chars": 500},
-    {"section": 3, "title": "배터리 & 발열", "type": "body", "description": "장시간 사용 시 배터리 소모와 발열 실측", "estimated_chars": 400},
-    {"section": 4, "title": "아쉬운 점", "type": "body", "description": "단점과 실제 사용 불편 경험 솔직하게 서술", "estimated_chars": 300},
-    {"section": 5, "title": "결론", "type": "closing", "description": "추천 대상과 구매 판단 기준 제시", "estimated_chars": 250}
+    {
+      "section": 1,
+      "title": "들어가며",
+      "type": "opening",
+      "description": "구매 계기와 첫 인상을 구체적 상황으로 시작",
+      "estimated_chars": 300
+    },
+    {
+      "section": 2,
+      "title": "성능 테스트 결과",
+      "type": "body",
+      "description": "벤치마크 수치와 체감 속도 비교",
+      "estimated_chars": 500
+    },
+    {
+      "section": 3,
+      "title": "배터리 & 발열",
+      "type": "body",
+      "description": "장시간 사용 시 배터리 소모와 발열 실측",
+      "estimated_chars": 400
+    },
+    {
+      "section": 4,
+      "title": "아쉬운 점",
+      "type": "body",
+      "description": "단점과 실제 사용 불편 경험 솔직하게 서술",
+      "estimated_chars": 300
+    },
+    {
+      "section": 5,
+      "title": "결론",
+      "type": "closing",
+      "description": "추천 대상과 구매 판단 기준 제시",
+      "estimated_chars": 250
+    }
   ]
 }
 ```
 
-### 입력 2 — 스타일 가이드 (기존 파일)
-
-**`data/style_guides/{category}.md`**
-- Phase 1에서 생성된 카테고리별 스타일 가이드
-- `style_guide_path`가 `null`이거나 파일이 없으면 빈 문자열로 진행, 경고 출력
-
-### 출력
-
-**`data/output/{YYYYMMDD}_{slug}_draft.md`**
-```markdown
-# 맥북 프로 M3 3개월 써본 솔직 후기
-
-<!-- meta: topic=맥북 프로 M3 리뷰, category=review, generated_at=2026-02-26T10:05:00+00:00 -->
-
-## 들어가며
-
-[섹션 1 본문 내용]
-
-## 성능 테스트 결과
-
-[섹션 2 본문 내용]
-
-## 배터리 & 발열
-
-[섹션 3 본문 내용]
-
-## 아쉬운 점
-
-[섹션 4 본문 내용]
-
-## 결론
-
-[섹션 5 본문 내용]
-```
-
-- 제목: `title_candidates[0]` 사용 (없으면 `topic` 그대로)
-- 메타 주석: Markdown HTML 주석 형식으로 삽입 (후속 Step에서 파싱 용도)
-- 각 섹션은 `## {section.title}` 헤더 + 본문 텍스트로 구성
+- `slug`: 날짜(`YYYYMMDD`) + 주제 한글을 붙여쓰기(공백→제거, 특수문자→제거)
+- `keywords`: LLM이 주제에서 추출한 SEO 핵심 키워드 (5개 내외)
+- `title_candidates`: SEO 고려 제목 후보 3개 (스타일 가이드 문체 반영)
+- `outline[].type`: `"opening"` | `"body"` | `"closing"`
+- `outline[].estimated_chars`: 섹션별 목표 글자 수 (총합 1750자 이상 → 완성 글 2000자+ 목표)
+- `style_guide_path`: 로드한 스타일 가이드 경로 (없으면 `null`)
 
 ---
 
 ## 4. 모듈 상세
 
-### `agents/writer.py` — WriterAgent
+### `agents/planner.py` — PlannerAgent
 
-#### `write(outline_path: Path) -> Path | None`
+#### `plan(topic: str) -> Path | None`
 
-최상위 진입 함수. 아래 단계를 순서대로 실행하고 `draft.md` 경로를 반환한다.
+최상위 진입 함수. 아래 단계를 순서대로 실행하고 outline.json 경로를 반환한다.
 
-0. `outline_path` 존재 여부 확인 → 없으면 에러 로그 + `None` 반환 (early return)
-1. `_load_outline(outline_path)` → outline dict
-2. `_load_style_guide(outline["style_guide_path"])` → style_guide 문자열
-3. `_build_style_context(style_guide)` → 프롬프트용 컨텍스트 문자열
-4. 섹션 순회: `_generate_section(section, topic, style_context, prev_contents)` → 각 섹션 본문
-5. `_assemble_draft(outline, contents)` → 최종 Markdown 문자열
-6. `_save_draft(outline, markdown)` → `Path | None`
+0. `topic.strip()` 빈 문자열이면 에러 로그 + `None` 반환 (early return)
+1. `_extract_keywords(topic)` → keywords 리스트
+2. `_infer_category(topic, keywords)` → category 문자열
+3. `_load_style_guide(category)` → `(style_guide_text, style_guide_path)` 튜플
+4. `_build_style_context(style_guide_text)` → 프롬프트용 컨텍스트 문자열
+5. `_generate_titles(topic, keywords, style_guide_text)` → title_candidates 리스트
+6. `_generate_outline(topic, keywords, style_guide_text)` → outline 리스트
+7. `_save_outline(...)` → `Path | None`
 
 실패 시 `None` 반환, 에러 로그 출력.
 
 ---
 
-#### `_load_outline(path: Path) -> dict | None`
+#### `_extract_keywords(topic: str) -> list[str]`
 
-- `path.read_text(encoding="utf-8")` → `json.loads()` 파싱.
-- 파일 없음: `FileNotFoundError` 로그 후 `None` 반환.
-- JSON 파싱 실패: `json.JSONDecodeError` 로그 후 `None` 반환.
-- 필수 필드(`topic`, `category`, `outline`) 중 하나라도 없으면 에러 로그 후 `None` 반환.
+- LLM에 주제를 전달해 SEO 핵심 키워드 5개 내외를 추출한다.
+- 프롬프트 설계:
+  - 시스템: "키워드만 쉼표로 구분해 반환하라. 다른 설명 없이."
+  - 유저: `f"주제: {topic}\n키워드 5개를 추출하라."`
+- LLM 응답을 쉼표 기준으로 분리, 공백 제거 후 반환.
+- 파싱 실패 시 `[topic]` 반환 (fallback).
 
 ---
 
-#### `_load_style_guide(style_guide_path: str | None) -> str`
+#### `_infer_category(topic: str, keywords: list[str]) -> str`
 
-- `style_guide_path`가 `None`이면 빈 문자열 반환.
-- `Path(style_guide_path).read_text(encoding="utf-8")` 시도.
-- 파일 없음 또는 `OSError`: 경고 로그 출력 후 빈 문자열 반환.
+- LLM에 주제와 키워드를 전달해 카테고리를 추론한다.
+- 허용 목록(`CATEGORIES`)을 프롬프트에 명시해 반드시 그 중 하나를 선택하도록 유도.
+- 프롬프트 설계:
+  - 시스템: `f"다음 카테고리 중 하나만 반환하라: {', '.join(CATEGORIES)}. 다른 텍스트 없이."`
+  - 유저: `f"주제: {topic}\n키워드: {', '.join(keywords)}"`
+- LLM 응답을 소문자로 정규화 → `re.search(rf"\b{cat}\b", response)` 완전 단어 매칭으로 허용 목록 탐색.
+- 허용 목록에 없으면 `"etc"` 반환 (fallback).
+
+---
+
+#### `_load_style_guide(category: str) -> tuple[str, Path | None]`
+
+- `STYLE_GUIDES_DIR / f"{category}.md"` 파일을 읽어 `(내용 문자열, Path)` 튜플로 반환.
+- 파일이 없으면 경고 로그 출력 후 `("", None)` 반환.
 
 ---
 
 #### `_build_style_context(style_guide: str) -> str`
 
-- `planner.py`의 `_build_style_context`와 동일한 로직 사용.
-- 단, writer 프롬프트에는 `## 문체`, `## 어휘`, `## 구조` 세 섹션을 모두 포함한다 (planner는 문체·구조만).
+- 스타일 가이드 전체 텍스트에서 `## 문체`, `## 구조` 섹션만 추출해 LLM 프롬프트용 컨텍스트 문자열로 반환.
 - 가이드가 빈 문자열이면 `""` 반환.
+- 제목 생성·아웃라인 생성 프롬프트에 공통으로 사용해 토큰 낭비를 줄인다.
 
 ---
 
-#### `_generate_section(section: dict, topic: str, style_context: str, prev_contents: list[str]) -> str`
+#### `_generate_titles(topic: str, keywords: list[str], style_guide: str) -> list[str]`
 
-섹션 하나의 본문을 LLM으로 생성한다.
-
-**프롬프트 설계:**
-
-```
-시스템:
-당신은 한국어 블로그 작가입니다.
-다음 규칙을 반드시 따르세요:
-- 지정된 글자 수에 근접한 본문을 생성하세요.
-- 본문 텍스트만 반환하고 섹션 제목·번호는 포함하지 마세요.
-- AI 생성 티가 나는 표현을 피하세요:
-  "물론입니다", "당연히", "매우 중요합니다", "효율적으로" 등의 과잉 표현 금지.
-  모든 문장 길이를 일정하게 맞추지 마세요. 짧은 문장과 긴 문장을 자연스럽게 섞으세요.
-  1·2·3처럼 단계식으로 과도하게 구조화하지 마세요.
-  구체적인 경험, 감각, 상황 묘사를 포함하세요.
-
-유저:
-블로그 주제: {topic}
-섹션 제목: {section.title}
-섹션 유형: {section.type}  (opening/body/closing)
-섹션 설명: {section.description}
-목표 글자 수: 약 {section.estimated_chars}자
-{style_context}
-{prev_context}
-
-위 섹션의 본문을 작성하세요.
-```
-
-- `prev_context`: 직전 1~2 섹션의 본문 요약(최대 200자 truncate)을 포함해 흐름 일관성 유지. 첫 섹션이면 생략.
-- `section.type == "opening"`: 구체적 상황·경험으로 시작하도록 프롬프트에 명시.
-- `section.type == "closing"`: 추천 대상·총평·개인 의견 포함하도록 명시.
-- LLM 응답이 빈 문자열이면 경고 로그 + `section.description` 반환 (fallback).
-- `generate()` 실패(예외): 에러 로그 + `section.description` 반환 (fallback).
+- LLM에 주제·키워드·스타일 가이드를 전달해 제목 후보 3개를 생성한다.
+- 프롬프트 설계:
+  - 스타일 가이드가 있으면 문체 항목(격식 수준, 자주 쓰는 표현)을 컨텍스트로 포함.
+  - "SEO에 유리하고 클릭을 유도하는 블로그 제목 3개를 줄바꿈으로 구분해 반환하라."
+- LLM 응답을 줄 단위로 분리, 번호·기호 제거 후 최대 3개 반환.
+- 파싱 결과가 0개면 `[topic]` 반환 (fallback).
 
 ---
 
-#### `_assemble_draft(outline: dict, contents: list[str]) -> str`
+#### `_generate_outline(topic: str, keywords: list[str], style_guide: str) -> list[dict]`
 
-- 제목: `outline["title_candidates"][0]` (없거나 빈 경우 `outline["topic"]` 사용).
-- 메타 주석: `<!-- meta: topic=..., category=..., generated_at=... -->` (ISO 8601 UTC).
-- 섹션별 `## {title}\n\n{content}\n\n` 형식으로 조합.
-- 최종 Markdown 문자열 반환.
+- LLM에 주제·키워드·스타일 가이드를 전달해 섹션별 목차를 생성한다.
+- 프롬프트 설계:
+  - 스타일 가이드의 `구조(Structure)` 항목(도입부·본문·마무리 유형)을 컨텍스트로 포함.
+  - 출력 형식: JSON 배열만 반환하도록 명시.
+  ```
+  다음 JSON 배열 형식으로만 응답하라:
+  [
+    {"section": 1, "title": "...", "type": "opening", "description": "...", "estimated_chars": 300},
+    ...
+  ]
+  ```
+  - 섹션 수: 5~7개, 총 estimated_chars 합계 1750 이상.
+- LLM 응답에서 JSON 배열 파싱:
+  1. 마크다운 코드블록(` ```json `) 제거
+  2. `\[\s*\{[\s\S]*\}\s*\]` 패턴으로 `[{...}]` 형태의 JSON 배열만 추출 (대괄호 오매칭 방지)
+- 파싱 실패 시 기본 아웃라인 반환 (fallback):
+  ```python
+  [
+    {"section": 1, "title": "들어가며",  "type": "opening", "description": topic, "estimated_chars": 300},
+    {"section": 2, "title": "본론 1",   "type": "body",    "description": topic, "estimated_chars": 400},
+    {"section": 3, "title": "본론 2",   "type": "body",    "description": topic, "estimated_chars": 400},
+    {"section": 4, "title": "본론 3",   "type": "body",    "description": topic, "estimated_chars": 400},
+    {"section": 5, "title": "마무리",   "type": "closing", "description": topic, "estimated_chars": 300},
+  ]
+  ```
 
 ---
 
-#### `_save_draft(outline: dict, markdown: str) -> Path | None`
+#### `_save_outline(topic: str, category: str, keywords: list[str], title_candidates: list[str], outline: list[dict], style_guide_path: Path | None) -> Path | None`
 
-- 저장 경로: `OUTPUT_DIR / f"{outline['slug']}_draft.md"`
-- `OUTPUT_DIR` 없으면 `mkdir(parents=True, exist_ok=True)`. 실패 시 `OSError` 로그 + `None` 반환.
-- `path.write_text(markdown, encoding="utf-8")`. 실패 시 `OSError` 로그 + `None` 반환.
-- 성공 시 `Path` 반환.
+- `slug`: `datetime.now().strftime("%Y%m%d")` + 주제 한글 압축 (공백·특수문자 제거, 최대 20자). 압축 결과가 빈 문자열이면 `"untitled"` 대체.
+- 저장 경로: `OUTPUT_DIR / f"{slug}_outline.json"`
+- `OUTPUT_DIR` 없으면 자동 생성 (`mkdir`). 생성 실패 시 `OSError` 로그 후 `None` 반환.
+- JSON 직렬화 후 UTF-8로 저장
 
 ---
 
@@ -213,38 +231,29 @@ data/output/{YYYYMMDD}_{slug}_outline.json
 
 | 상황 | 처리 방식 |
 |------|----------|
-| 아웃라인 파일 없음 | 에러 로그 → `None` 반환 |
-| JSON 파싱 실패 | 에러 로그 → `None` 반환 |
-| 필수 필드 누락 | 에러 로그 → `None` 반환 |
+| 빈·공백 전용 주제 입력 | `plan()` 진입 시 early return → `None` 반환 |
+| LLM 응답 타임아웃 | 에러 로그 출력 → fallback 또는 `None` 반환 |
+| JSON 파싱 실패 | 경고 로그 + fallback 아웃라인 사용 |
 | 스타일 가이드 없음 | 경고 출력 후 빈 문자열로 계속 진행 |
-| 섹션 LLM 생성 실패 | 경고 로그 + `section.description`으로 fallback, 나머지 섹션 계속 진행 |
-| LLM 응답 빈 문자열 | 경고 로그 + `section.description` fallback |
 | OUTPUT_DIR 생성 실패 | OSError 로그 → `None` 반환 |
 
 ---
 
-### `main.py` — write 파이프라인 확장
+### `main.py` — `write` 서브커맨드 추가
 
 ```python
 def cmd_write(topic: str) -> None:
     print(f"주제: {topic}")
-
     outline_path = plan(topic)
-    if not outline_path:
-        print("  [fail] 아웃라인 생성 실패 — 중단")
-        return
-
-    print(f"  아웃라인 생성 완료: {outline_path}")
-
-    draft_path = write(outline_path)
-    if draft_path:
-        print(f"  초안 생성 완료: {draft_path}")
+    if outline_path:
+        print(f"아웃라인 생성 완료: {outline_path}")
     else:
-        print("  [fail] 초안 생성 실패")
-```
+        print("아웃라인 생성 실패")
 
-- `write` 함수를 `agents/writer.py`에서 import.
-- `plan()` 실패 시 즉시 반환 (writer 호출 생략).
+# main() 내 subparsers에 추가
+write_parser = subparsers.add_parser("write", help="주제를 입력해 블로그 아웃라인을 생성한다")
+write_parser.add_argument("--topic", required=True, help="블로그 주제")
+```
 
 ---
 
@@ -257,29 +266,61 @@ VibeWriter/
 │   ├── parser.py
 │   ├── analysis.py
 │   ├── style_guide.py
-│   ├── planner.py
-│   └── writer.py           ← 섹션별 본문 생성 · draft.md 저장 (신규)
+│   └── planner.py          ← 주제 분석 · 아웃라인 생성 (신규)
 ├── data/
 │   ├── input/
 │   ├── raw_html/
 │   ├── parsed_posts/
 │   ├── analysis/
 │   ├── style_guides/
-│   └── output/             ← {slug}_outline.json + {slug}_draft.md (.gitignore)
+│   └── output/             ← {slug}_outline.json 저장 (신규, .gitignore 적용)
 ├── utils/
 │   ├── file_manager.py
 │   ├── ollama_client.py
 │   └── logger.py
-├── config.py
-├── main.py                 ← cmd_write()에 write() 연결 (수정)
+├── config.py               ← OUTPUT_DIR 이미 정의됨 (추가 불필요)
+├── main.py                 ← write 서브커맨드 + cmd_write() 추가
 └── docs/dev/
     ├── _template.md
     ├── phase1-step1-2.md
     ├── phase1-step3.md
     ├── phase1-step5.md
-    ├── phase2-step1.md
     └── phase2-step2.md     ← 본 문서
 ```
+
+---
+
+## 7. 이후 변경 이력
+
+### Phase 2 Step 2 구현 시 `main.py` 변경 (2026-02-26)
+
+Step 2(`agents/writer.py`) 구현 완료 후 `cmd_write()`가 아래와 같이 확장됨.
+원본(위 스니펫)은 Step 1 시점의 구현이며, 현재 코드는 아래와 같이 변경됨.
+
+```python
+# Step 2 이후 현재 코드 (main.py)
+def cmd_write(topic: str) -> None:
+    print(f"주제: {topic}\n")
+
+    outline_path = plan(topic)
+    if not outline_path:
+        print("\n  [fail] 아웃라인 생성 실패 — 중단")
+        sys.exit(1)
+
+    print(f"\n  아웃라인 생성 완료: {outline_path}")
+
+    draft_path = write(outline_path)     # ← Step 2에서 추가
+    if draft_path:
+        print(f"  초안 생성 완료: {draft_path}")
+    else:
+        print("  [fail] 초안 생성 실패")
+        sys.exit(1)
+```
+
+**변경 요약**:
+- `write(outline_path)` 호출 추가 (`agents/writer.py` import)
+- 실패 시 `sys.exit(1)` 처리 통일
+- 출력 메시지 들여쓰기 및 표현 통일
 
 ---
 
@@ -287,11 +328,11 @@ VibeWriter/
 
 | 항목 | 확인 방법 |
 |------|----------|
-| 기본 동작 | `uv run python main.py write --topic "제주 여행 3박4일 후기"` → `data/output/` 에 `_draft.md` 생성 확인 |
-| 전체 글자 수 | `_draft.md` 전체 본문 글자 수 ≥ 2000자 확인 |
-| 섹션 구성 | 아웃라인 섹션 수와 `_draft.md`의 `##` 헤더 수 일치 확인 |
-| 제목 반영 | `_draft.md` 첫 줄이 `title_candidates[0]`과 일치 확인 |
-| 스타일 가이드 반영 | 스타일 가이드가 있는 카테고리로 생성 → 문체가 가이드 기준에 근접하는지 육안 확인 |
-| 섹션 fallback | `generate()` 실패를 임시 mock으로 시뮬레이션 → 해당 섹션에 `description` 텍스트 삽입 후 나머지 섹션 정상 진행 확인 |
-| 아웃라인 없는 경우 | 존재하지 않는 경로 전달 → 에러 로그 출력 후 `None` 반환 확인 |
-| 파이프라인 연결 | `main.py write` 한 번 실행으로 outline.json + draft.md 두 파일 모두 생성 확인 |
+| 기본 동작 | `uv run python main.py write --topic "제주 여행 3박4일 후기"` 실행 → `data/output/` 에 `_outline.json` 생성 확인 |
+| 카테고리 추론 | 여행 주제 → `travel`, 기술 주제 → `tech` 등 올바른 카테고리 추론 확인 |
+| 스타일 가이드 반영 | 해당 카테고리 가이드 존재 시 `style_guide_path` 필드에 경로 기록 확인 |
+| 스타일 가이드 없는 경우 | 해당 카테고리 `.md` 파일 삭제 후 실행 → 경고 출력 후 `style_guide_path: null`로 정상 완료 확인 |
+| 아웃라인 글자 수 | `outline[].estimated_chars` 합계 ≥ 1750 확인 |
+| 제목 후보 | `title_candidates` 3개 생성 확인 |
+| JSON 파싱 실패 fallback | LLM이 잘못된 형식 반환 시에도 기본 3섹션 아웃라인으로 저장 확인 |
+| 파이프라인 연결 | `main.py write` 서브커맨드로 `plan()` 호출 후 반환 경로 출력 확인 |
