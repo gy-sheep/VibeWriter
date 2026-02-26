@@ -142,15 +142,17 @@ _TONE_DEFAULT: dict = {
 
 def _parse_tone(response: str) -> dict:
     """LLM 응답에서 톤앤매너 dict를 추출한다. 실패 시 기본값을 반환한다."""
+    # 마크다운 코드 블록 제거
+    cleaned = re.sub(r"```[a-z]*\n?", "", response).strip()
     try:
-        data = json.loads(response.strip())
+        data = json.loads(cleaned)
         if all(k in data for k in ("writing_style", "vocabulary", "structure")):
             return data
     except json.JSONDecodeError:
         pass
 
-    # JSON 블록만 추출 시도
-    match = re.search(r'\{[\s\S]*\}', response)
+    # JSON 객체 블록만 추출 시도
+    match = re.search(r'\{\s*"[\s\S]*\}', cleaned)
     if match:
         try:
             data = json.loads(match.group())

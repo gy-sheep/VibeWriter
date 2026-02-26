@@ -153,8 +153,10 @@ def _generate_outline(topic: str, keywords: list[str], style_guide: str) -> list
     )
     try:
         response = generate(prompt)
-        # JSON 배열 추출
-        match = re.search(r"\[[\s\S]*\]", response)
+        # 마크다운 코드 블록 제거 (```json ... ```)
+        response = re.sub(r"```[a-z]*\n?", "", response).strip()
+        # JSON 배열 추출 — [{로 시작해 }]로 끝나는 패턴을 우선 탐색
+        match = re.search(r"\[\s*\{[\s\S]*\}\s*\]", response)
         if match:
             outline = json.loads(match.group())
             if isinstance(outline, list) and outline:
@@ -165,6 +167,11 @@ def _generate_outline(topic: str, keywords: list[str], style_guide: str) -> list
                 )
                 if valid:
                     return outline
+            logger.warning("아웃라인 필드 검증 실패: topic=%s, outline=%s", topic, outline)
+        else:
+            logger.warning("아웃라인 JSON 추출 실패 (패턴 불일치): topic=%s, response_preview=%s", topic, response[:200])
+    except json.JSONDecodeError as e:
+        logger.error("아웃라인 JSON 파싱 실패: topic=%s, %s", topic, e)
     except Exception as e:
         logger.error("아웃라인 생성 실패: topic=%s, %s", topic, e)
 

@@ -1,6 +1,6 @@
 import httpx
 
-from config import OLLAMA_BASE_URL, OLLAMA_MODEL
+from config import OLLAMA_BASE_URL, OLLAMA_MODEL, OLLAMA_TIMEOUT
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -17,7 +17,7 @@ def generate(prompt: str, model: str = OLLAMA_MODEL) -> str:
         response = httpx.post(
             f"{OLLAMA_BASE_URL}/api/generate",
             json={"model": model, "prompt": prompt, "stream": False},
-            timeout=120.0,
+            timeout=OLLAMA_TIMEOUT,
         )
         response.raise_for_status()
 

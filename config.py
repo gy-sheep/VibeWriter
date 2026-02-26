@@ -16,8 +16,10 @@ OUTPUT_DIR = DATA_DIR / "output"
 BLOG_URLS_FILE = INPUT_DIR / "blog_urls.txt"
 
 # LLM
-OLLAMA_MODEL = "llama3.1:8b"
+# OLLAMA_MODEL = "llama3.1:8b"      # MAC M2 16G
+OLLAMA_MODEL = "gemma3:27b"         # MAC M4 24G
 OLLAMA_BASE_URL = "http://localhost:11434"
+OLLAMA_TIMEOUT = 300.0              # 초 (대형 모델 대응: 27b 기준 5분)
 
 # 허용 카테고리 목록
 CATEGORIES = ["tech", "travel", "food", "lifestyle", "review", "etc"]
